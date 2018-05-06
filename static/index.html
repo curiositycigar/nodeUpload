@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<div>this is test file</div>
+<form action="/upload" method="post" enctype="multipart/form-data">
+    file: <input type="file" id="file" name="file"/>
+    <input type="submit" value="submit">
+</form>
+<span id="progress"></span><br/>
+<span id="uploadProgress"></span>
+<script src="./spark-md5.js"></script>
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+<script type="text/javascript">
+  let fileElement = document.querySelector('#file')
+  let progress = document.querySelector('#progress')
+  let uploadProgress = document.querySelector('#uploadProgress')
+  fileElement.addEventListener('change', function () {
+    let file = fileElement.files[0]
+    let chunkSize = 1024 * 1024 * 2
+    let chunks = Math.ceil(file.size / chunkSize)
+    let currentChunk = 0
+    let spark = new SparkMD5.ArrayBuffer()
+    let fileReader = new FileReader()
+
+    fileReader.onerror = function () {
+      console.warn('oops, something went wrong.');
+    };
+    fileReader.onload = function (e) {
+      console.log('read chunk nr', currentChunk + 1, 'of', chunks);
+      progress.innerHTML = ((currentChunk + 1) / chunks) * 100 + '%'
+      spark.append(e.target.result);                   // Append array buffer
+      currentChunk++;
+
+      if (currentChunk < chunks) {
+        loadNext();
+      } else {
+        let md5 = spark.end()
+        axios.post('/checkFile', {md5}).then(function ({data}) {
+          if (data.status !== true) {
+            doUpload(file, chunks, chunkSize, md5)
+          } else {
+            console.log('秒传成功!')
+          }
+        })
+      }
+    };
+
+    function loadNext() {
+      let start = currentChunk * chunkSize
+      let end = ((start + chunkSize) >= file.size) ? file.size : start + chunkSize;
+      fileReader.readAsArrayBuffer(file.slice(start, end))
+      console.log(file.slice(start, end))
+    }
+
+    function doUpload(file, total, chunkSize, md5) {
+      let current = 0
+      uploadChunk({
+        md5,
+        total,
+        current,
+        file: file.slice(current * chunkSize, ((current * chunkSize + chunkSize) >= file.size) ? file.size : current * chunkSize + chunkSize)
+      })
+
+      function uploadChunk(params) {
+        return axios.post('/uploadChunk', params).then(function ({data}) {
+          let current = data.current
+          uploadProgress.innerHTML = ((current + 1) / total) * 100 + '%'
+          if (current <= total) {
+            uploadChunk({
+              md5,
+              total,
+              current,
+              file: file.slice(current * chunkSize, ((current * chunkSize + chunkSize) >= file.size) ? file.size : current * chunkSize + chunkSize)
+            })
+          } else {
+            console.log('done!')
+          }
+        })
+      }
+    }
+
+
+    loadNext();
+  })
+</script>
+</body>
+</html>
