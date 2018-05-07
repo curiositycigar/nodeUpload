@@ -1,23 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Title</title>
+  <meta charset="UTF-8">
+  <title>Title</title>
 </head>
 <body>
 <div>this is test file</div>
 <form action="/upload" method="post" enctype="multipart/form-data">
-    file: <input type="file" id="file" name="file"/>
-    <input type="submit" value="submit">
+  file: <input type="file" id="file" name="file"/>
+  <input type="submit" value="submit">
 </form>
-<span id="progress"></span><br/>
-<span id="uploadProgress"></span>
+<button id="pause">暂停/继续</button><br/>
+校验进度：<span id="progress">请选择文件...</span><br/>
+上传进度：<span id="uploadProgress">等待校验完成...</span>
 <script src="./spark-md5.js"></script>
-<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+<script src="./axios.js"></script>
 <script type="text/javascript">
   let fileElement = document.querySelector('#file')
   let progress = document.querySelector('#progress')
   let uploadProgress = document.querySelector('#uploadProgress')
+  let pause = document.querySelector('#pause')
+  let stop = false
   fileElement.addEventListener('change', function () {
     let file = fileElement.files[0]
     let chunkSize = 1024 * 1024 * 2
@@ -40,11 +43,24 @@
       } else {
         let md5 = spark.end()
         axios.post('/checkFile', {md5}).then(function ({data}) {
-          if (data.status !== true) {
-            doUpload(file, chunks, chunkSize, md5)
+          if (data.status === true) {
+            doUpload(file, chunks, chunkSize, md5, data.current)
           } else {
-            console.log('秒传成功!')
+            uploadProgress.innerHTML = '秒传成功!'
           }
+        })
+        pause.addEventListener('click', function () {
+          if (stop) {
+            // 继续
+            axios.post('/checkFile', {md5}).then(function ({data}) {
+              if (data.status === true) {
+                doUpload(file, chunks, chunkSize, md5, data.current)
+              } else {
+                uploadProgress.innerHTML = '秒传成功!'
+              }
+            })
+          }
+          stop = !stop
         })
       }
     };
@@ -56,33 +72,47 @@
       console.log(file.slice(start, end))
     }
 
-    function doUpload(file, total, chunkSize, md5) {
-      let current = 0
-      uploadChunk({
-        md5,
-        total,
-        current,
+    function doUpload(file, total, chunkSize, md5, current) {
+      uploadChunk(createFormData({
+        md5, total, current,
         file: file.slice(current * chunkSize, ((current * chunkSize + chunkSize) >= file.size) ? file.size : current * chunkSize + chunkSize)
-      })
-
+      }))
       function uploadChunk(params) {
+        if (stop) {
+          return
+        }
         return axios.post('/uploadChunk', params).then(function ({data}) {
+          console.log('network:', data)
           let current = data.current
-          uploadProgress.innerHTML = ((current + 1) / total) * 100 + '%'
-          if (current <= total) {
-            uploadChunk({
-              md5,
-              total,
-              current,
+          uploadProgress.innerHTML = ((current) / total) * 100 + '%'
+          console.log(current, total)
+          if (current < total) {
+            uploadChunk(createFormData({
+              md5, total, current,
               file: file.slice(current * chunkSize, ((current * chunkSize + chunkSize) >= file.size) ? file.size : current * chunkSize + chunkSize)
-            })
+            }))
           } else {
-            console.log('done!')
+            axios.post('/finishUpload', {
+              name: file.name,
+              total,
+              md5
+            }).then(function ({data}) {
+              if (data.status === true) {
+                uploadProgress.innerHTML = data.data
+              }
+            })
           }
         })
       }
     }
 
+    function createFormData(params) {
+      let formData = new FormData()
+      for (let key in params) {
+        formData.append(key, params[key])
+      }
+      return formData
+    }
 
     loadNext();
   })
