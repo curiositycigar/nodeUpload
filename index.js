@@ -11,9 +11,16 @@ const router = new KoaRouter()
 app.use(bodyParser({multipart: true}))
 app.use(serve('static'))
 
+// 记录已上传文件md5，为秒传做准备
 let fileMd5List = []
 let tmpDir = path.join(__dirname, `./uploadTmp`)
 let uploadDir = path.join(__dirname, `./upload/`)
+if (!fs.existsSync(tmpDir)) {
+  fs.mkdirSync(tmpDir)
+}
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir)
+}
 
 router.post('/uploadChunk', async (ctx, next) => {
   const md5 = ctx.request.body.fields.md5
