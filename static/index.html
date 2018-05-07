@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Title</title>
+  <title>大文件上传</title>
 </head>
 <body>
 <div>this is test file</div>
@@ -35,7 +35,7 @@
     };
     fileReader.onload = function (e) {
       console.log('read chunk nr', currentChunk + 1, 'of', chunks);
-      progress.innerHTML = ((currentChunk + 1) / chunks) * 100 + '%'
+      progress.innerHTML = (((currentChunk + 1) / chunks) * 100).toFixed(2) + '%'
       spark.append(e.target.result);                   // Append array buffer
       currentChunk++;
 
@@ -86,7 +86,7 @@
         return axios.post('/uploadChunk', params).then(function ({data}) {
           console.log('network:', data)
           let current = data.current
-          uploadProgress.innerHTML = ((current) / total) * 100 + '%'
+          uploadProgress.innerHTML = (((current) / total) * 100).toFixed(2) + '%'
           console.log(current, total)
           if (current < total) {
             uploadChunk(createFormData({

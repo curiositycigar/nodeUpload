@@ -4,6 +4,7 @@ const path = require('path')
 const Koa = require('koa2')
 const KoaRouter = require('koa-router')
 const bodyParser = require('koa-body')
+const PassThrough = require('stream').PassThrough
 const serve = require('koa-static')
 
 const app = new Koa()
@@ -85,7 +86,8 @@ router.post('/finishUpload', async (ctx, next) => {
   let total = ctx.request.body.total
   let md5 = ctx.request.body.md5
   let tmpPath = path.join(tmpDir, md5)
-  let filePath = path.join(uploadDir, md5 + name)
+  let filePath = path.join(uploadDir, md5)
+  console.log('原始文件名: ', name)
   fileMd5List.push(md5)
   for (let i = 0; i < total; i++) {
     let content = fs.readFileSync(path.join(tmpPath, i + ''))
@@ -96,6 +98,19 @@ router.post('/finishUpload', async (ctx, next) => {
     data: '上传成功!'
   }
   console.log('文件写入完成！')
+})
+router.get('/download/:md5', async (ctx, next) => {
+  let md5 = ctx.params.md5
+  let filePath = path.join(uploadDir, md5)
+  let fsStat = fs.statSync(filePath)
+  if (fsStat.isFile()) {
+    let reader = fs.createReadStream(filePath)
+    ctx.set('Content-disposition', 'attachment; filename=filename');
+    ctx.set('Content-Length', fsStat.size);
+    ctx.body = reader.on('error', ctx.onerror).pipe(PassThrough())
+  } else {
+    ctx.throw(404)
+  }
 })
 
 app.use(router.routes()).use(router.allowedMethods())
