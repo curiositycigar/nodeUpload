@@ -13,6 +13,7 @@ app.use(bodyParser({multipart: true}))
 app.use(serve('static'))
 
 // 记录已上传文件md5，为秒传做准备
+// Demo中只将文件MD5存于内存中，实际可以记录数据库，也可以查目录
 let fileMd5List = []
 let tmpDir = path.join(__dirname, `./uploadTmp`)
 let uploadDir = path.join(__dirname, `./upload/`)
@@ -87,6 +88,7 @@ router.post('/finishUpload', async (ctx, next) => {
   let md5 = ctx.request.body.md5
   let tmpPath = path.join(tmpDir, md5)
   let filePath = path.join(uploadDir, md5)
+  // 原始文件名，用来存数据库
   console.log('原始文件名: ', name)
   fileMd5List.push(md5)
   for (let i = 0; i < total; i++) {
@@ -105,6 +107,7 @@ router.get('/download/:md5', async (ctx, next) => {
   let fsStat = fs.statSync(filePath)
   if (fsStat.isFile()) {
     let reader = fs.createReadStream(filePath)
+    // 若文件名存数据库，则从数据库取得文件名
     ctx.set('Content-disposition', 'attachment; filename=filename');
     ctx.set('Content-Length', fsStat.size);
     ctx.body = reader.on('error', ctx.onerror).pipe(PassThrough())
