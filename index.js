@@ -13,8 +13,6 @@ app.use(bodyParser({multipart: true}))
 app.use(serve('static'))
 
 // 记录已上传文件md5，为秒传做准备
-// Demo中只将文件MD5存于内存中，实际可以记录数据库，也可以查目录
-let fileMd5List = []
 let tmpDir = path.join(__dirname, `./uploadTmp`)
 let uploadDir = path.join(__dirname, `./upload/`)
 if (!fs.existsSync(tmpDir)) {
@@ -24,6 +22,10 @@ if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir)
 }
 
+// Demo中只将文件MD5存于内存中，实际可以以(文件名，md5)对应，记录数据库
+// 查询一次目录
+let fileMd5List = fs.readdirSync(uploadDir)
+// 接收文件分片
 router.post('/uploadChunk', async (ctx, next) => {
   const md5 = ctx.request.body.fields.md5
   // chunk总数
@@ -32,16 +34,19 @@ router.post('/uploadChunk', async (ctx, next) => {
   const current = parseInt(ctx.request.body.fields.current)
   // file
   const file = ctx.request.body.files.file
-  console.log(md5, current, total)
+  // 保存分片
   if (current < total) {
+    // 分片存储路径
     let tmpPath = path.join(tmpDir, md5)
     if (!fs.existsSync(tmpPath)) {
       fs.mkdirSync(tmpPath)
     }
+    // 创建读写流
     const reader = fs.createReadStream(file.path);
     const stream = fs.createWriteStream(path.join(tmpPath, current + ''));
     reader.pipe(stream);
     ctx.body = await new Promise(function (resolve, reject) {
+      // 流关闭时返回
       reader.on('close', function () {
         resolve({
           status: true,
@@ -67,9 +72,9 @@ router.post('/checkFile', async (ctx, next) => {
   } else {
     try {
       fs.accessSync(path.join(tmpDir, md5))
-      // 断点续传
+      // 断点续传,因为只做了单点上传，所以此处只检测了文件个数就可以判断下一个分片
+      //
       let files = fs.readdirSync(path.join(tmpDir, md5))
-      console.log(files)
       ctx.body = {
         status: true,
         current: files.length
@@ -110,6 +115,7 @@ router.get('/download/:md5', async (ctx, next) => {
     // 若文件名存数据库，则从数据库取得文件名
     ctx.set('Content-disposition', 'attachment; filename=filename');
     ctx.set('Content-Length', fsStat.size);
+    console.log(ctx.response.headers)
     ctx.body = reader.on('error', ctx.onerror).pipe(PassThrough())
   } else {
     ctx.throw(404)
