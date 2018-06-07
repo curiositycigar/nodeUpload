@@ -61,21 +61,25 @@
   }
   // 相减
   function reduce(big, small) {
+    let symbol = ''
     if (big.length < small.length) {
       [big, small] = [small, big]
+      symbol = '-'
     }
     small = small.padStart(big.length, '0')
     let parsedBig = big.split('').map(item => parseInt(item))
     let parsedSmall = small.split('').map(item => parseInt(item))
 
     if (big.length === small.length && compare(parsedSmall, parsedBig)) {
-      [big, small] = [small, big]
+      [parsedBig, parsedSmall] = [parsedSmall, parsedBig]
+      symbol = '-'
     }
 
     let length = big.length
     let carry = 0
     for (let i = length - 1; i >= 0; i--) {
       parsedBig[i] -= carry
+      carry = 0
       if (parsedSmall[i] > parsedBig[i]) {
         parsedBig[i] += 10
         carry = 1
@@ -84,10 +88,13 @@
     }
     let result = parsedBig.join('').replace(/^[0]*/, '')
 
-    return result ? result : '0'
+    return symbol + (result ? result : '0')
   }
   // 比较，如果a>b 返回true
   function compare(a, b) {
+    if (a.length > b.length) {
+      return true
+    }
     for (let i = 0; i < a.length; a++) {
       if (a[i] > b[i]) {
         return true
@@ -114,6 +121,27 @@
     return num + new Array(n).fill('0').join('')
   }
   // 除
+  function divide(dividend, divisor) {
+    let result = '0'
+    while (dividend !== '0' && dividend.indexOf('-') === -1) {
+      if (dividend.length > divisor.length) {
+        let newDivisor = ''
+        if(dividend[0] >= divisor[0]){
+          newDivisor = divisor.padEnd(dividend.length, '0')
+        }else{
+          newDivisor = multiplyOne(divisor.padEnd(dividend.length - 1, '0'), Math.floor(dividend[0] * 10 / (divisor[0] + 1)))
+        }
+        let zeroNum = dividend.length - 1 - divisor.length
+        dividend = reduce(dividend, newDivisor)
+        result = add(result, Math.pow(10, zeroNum) + '')
+      } else {
+        dividend = reduce(dividend, divisor)
+        result = add(result, '1')
+      }
+      console.log(dividend)
+    }
+    return dividend.indexOf('-') !== -1 ? result - 1 : result
+  }
 
   // 输入(列， 行)
   C(1, 6)
