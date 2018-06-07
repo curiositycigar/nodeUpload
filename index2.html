@@ -29,24 +29,48 @@
     return divide(fa(row, row - col + 1), fa(col, 1))
   }
 
-  // 计算阶乘
-  function factorial(n, begin) {
-    let result = 1
-    while (begin >= 1) {
-      result *= (n / begin)
-      begin--
-      n--
+  function fa(n, begin) {
+    let result = (n + '').split('').map(item => parseInt(item))
+    while (--n >= begin) {
+      result = multiplyOneArr(result, n)
     }
     return result
   }
 
-  function fa(n, begin) {
-    let result = n + ''
-    while (--n >= begin) {
-      result = multiplyOne(result, n)
+  // 大数(Arr)乘以整数
+  function multiplyOneArr(parsedNumber, n) {
+    let carry = 0
+    for (let i = parsedNumber.length - 1; i >= 0; i--) {
+      let multiplied = parsedNumber[i] * n + carry
+      parsedNumber[i] = multiplied % 10
+      carry = Math.floor(multiplied / 10)
     }
-    return result
+    if (carry) {
+      let carryStr = carry + ''
+      for (let i = carryStr.length - 1; i >= 0; i--) {
+        parsedNumber.unshift(parseInt(carryStr[i]))
+      }
+      // parsedNumber.unshift(carry)
+    }
+    return parsedNumber
   }
+
+
+  // 大数(string)乘以整数
+  function multiplyOne(num, n) {
+    let parsedNumber = num.split('').map(item => parseInt(item))
+    let carry = 0
+    for (let i = parsedNumber.length - 1; i >= 0; i--) {
+      let multiplied = parsedNumber[i] * n + carry
+      parsedNumber[i] = multiplied % 10
+      carry = Math.floor(multiplied / 10)
+    }
+    if (carry) {
+      parsedNumber.unshift(carry)
+    }
+    return parsedNumber.join('')
+  }
+
 
   // 相加
   function add(big, small) {
@@ -103,6 +127,8 @@
     return symbol + (result ? result : '0')
   }
 
+
+
   // 比较，如果a>b 返回true
   function compare(a, b) {
     if (a.length > b.length) {
@@ -116,38 +142,6 @@
       }
     }
     return false
-  }
-
-  // 大数(string)乘以整数
-  function multiplyOne(num, n) {
-    let parsedNumber = num.split('').map(item => parseInt(item))
-    let carry = 0
-    for (let i = parsedNumber.length - 1; i >= 0; i--) {
-      let multiplied = parsedNumber[i] * n + carry
-      parsedNumber[i] = multiplied % 10
-      carry = Math.floor(multiplied / 10)
-    }
-    if (carry) {
-      parsedNumber.unshift(carry)
-    }
-    return parsedNumber.join('')
-  }
-
-  // 乘10
-  function multiplyTen(num, n) {
-    return num + new Array(n).fill('0').join('')
-  }
-
-  // 乘法
-
-  function multiply(num, num2) {
-    let parsedNumber = num.split('').map(item => parseInt(item))
-    let length = parsedNumber.length - 1
-    let result = '0'
-    parsedNumber.forEach((item, index) => {
-      result = add(result, multiplyTen(multiplyOne(num2, item), length - index))
-    })
-    return result
   }
 
   // 除
@@ -185,9 +179,6 @@
     // return dividend.indexOf('-') !== -1 ? result - 1 : result
     return result
   }
-
-  // 输入(列， 行)
-  C(1, 6)
 </script>
 </body>
 </html>
