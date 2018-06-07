@@ -101,6 +101,7 @@
         md5, total, current,
         file: file.slice(current * chunkSize, ((current * chunkSize + chunkSize) >= file.size) ? file.size : current * chunkSize + chunkSize)
       }))
+
       function uploadChunk(params) {
         if (stop) {
           return
