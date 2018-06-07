@@ -126,10 +126,12 @@
     while (dividend !== '0' && dividend.indexOf('-') === -1) {
       if (dividend.length > divisor.length) {
         let newDivisor = ''
-        if(dividend[0] >= divisor[0]){
+        let dividend0 = dividend[0]
+        let divisor0 = divisor[0]
+        if(dividend0 >= divisor0){
           newDivisor = divisor.padEnd(dividend.length, '0')
         }else{
-          newDivisor = multiplyOne(divisor.padEnd(dividend.length - 1, '0'), Math.floor(dividend[0] * 10 / (divisor[0] + 1)))
+          newDivisor = multiplyOne(divisor.padEnd(dividend.length - 1, '0'), Math.floor(dividend0 * 10 / (divisor0 + 1)))
         }
         let zeroNum = dividend.length - 1 - divisor.length
         dividend = reduce(dividend, newDivisor)
