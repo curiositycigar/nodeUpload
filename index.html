@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>test</title>
+</head>
+<body>
+<script type="text/javascript">
+  // 杨辉三角题目
+  // 输入列、行C(4, 6)
+  // 不存在返回0
+  function C(col, row) {
+    // 转换数据
+    col -= 1
+    row -= 1
+    // 对称性质
+    let revert = row - col
+    col = col > revert ? revert : col
+    // 不存在的情况(且排除了分母为0情况)
+    if (row < 0 || col < 0 || col > row) {
+      throw new Error('请求的行列不存在!')
+    }
+    // 边和顶部返回值
+    if (col === 0 || row === 0) {
+      return 1
+    }
+    // 返回结果
+    return factorial(row, col)
+  }
+  // 计算阶乘
+  function factorial(n, begin) {
+    let result = 1
+    while (begin >= 1) {
+      result *= (n / begin)
+      begin--
+      n--
+    }
+    return result
+  }
+
+  // 相加
+  function add(big, small) {
+    if (big.length < small.length) {
+      [big, small] = [small, big]
+    }
+    small = small.padStart(big.length, '0')
+    let parsedBig = big.split('').map(item => parseInt(item))
+    let parsedSmall = small.split('').map(item => parseInt(item))
+
+    let length = big.length
+    let carry = 0
+    for (let i = length - 1; i >= 0; i--) {
+      let added = parsedBig[i] + parsedSmall[i] + carry
+      parsedBig[i] = added % 10
+      carry = Math.floor(added / 10)
+    }
+    if (carry) {
+      parsedBig.unshift(carry)
+    }
+    return parsedBig.join('')
+  }
+  // 相减
+  function reduce(big, small) {
+    if (big.length < small.length) {
+      [big, small] = [small, big]
+    }
+    small = small.padStart(big.length, '0')
+    let parsedBig = big.split('').map(item => parseInt(item))
+    let parsedSmall = small.split('').map(item => parseInt(item))
+
+    if (big.length === small.length && compare(parsedSmall, parsedBig)) {
+      [big, small] = [small, big]
+    }
+
+    let length = big.length
+    let carry = 0
+    for (let i = length - 1; i >= 0; i--) {
+      parsedBig[i] -= carry
+      if (parsedSmall[i] > parsedBig[i]) {
+        parsedBig[i] += 10
+        carry = 1
+      }
+      parsedBig[i] = parsedBig[i] - parsedSmall[i]
+    }
+    let result = parsedBig.join('').replace(/^[0]*/, '')
+
+    return result ? result : '0'
+  }
+  // 比较，如果a>b 返回true
+  function compare(a, b) {
+    for (let i = 0; i < a.length; a++) {
+      if (a[i] > b[i]) {
+        return true
+      }
+    }
+    return false
+  }
+  // 大数(string)乘以单个数
+  function multiplyOne(num, n) {
+    let parsedNumber = num.split('').map(item => parseInt(item))
+    let carry = 0
+    for (let i = parsedNumber.length - 1; i >= 0; i--) {
+      let multiplied = parsedNumber[i] * n + carry
+      parsedNumber[i] = multiplied % 10
+      carry = Math.floor(multiplied / 10)
+    }
+    if (carry) {
+      parsedNumber.unshift(carry)
+    }
+    return parsedNumber.join('')
+  }
+  // 乘10
+  function multiplyTen(num, n) {
+    return num + new Array(n).fill('0').join('')
+  }
+  // 除
+
+  // 输入(列， 行)
+  C(1, 6)
+</script>
+</body>
+</html>
